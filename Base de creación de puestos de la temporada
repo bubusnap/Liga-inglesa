@@ -1,0 +1,168 @@
+#CREACION DE LA TABLA EQUIPOS
+CREATE TABLE total_equipos (
+    equipos VARCHAR(30) PRIMARY KEY
+);
+
+#INSERSION DE A LA TABLA EQUIPOS
+INSERT total_equipos
+SELECT 
+    hometeam AS equipos
+FROM
+    epl_set
+GROUP BY equipos;
+
+#CREACION DE LA TABLA TEMPORADA 2010_2011
+
+CREATE TABLE tem_10_11 (
+    puesto INT PRIMARY KEY AUTO_INCREMENT,
+    equipos VARCHAR(30),
+    partidos_ganados INT,
+    partidos_empatados INT,
+    partidos_perdidos INT,
+    total_partidos INT,
+    puntos INT,
+    FOREIGN KEY (equipos)
+        REFERENCES total_equipos (equipos)
+);
+
+#CREACION DE LA VISTA T10 (TEMPORADA 2010-12)
+
+CREATE VIEW t10 as
+SELECT 
+        epl_set.HomeTeam AS equipo,
+        COUNT(epl_set.FTR) AS victoria,
+        SUM(0) AS empate,
+        SUM(0) AS derrota,
+        epl_set.Season AS temporada
+    FROM
+        epl_set
+    WHERE
+        ((epl_set.Season = '2010-11')
+            AND (epl_set.FTR = 'H'))
+    GROUP BY equipo 
+    UNION ALL SELECT 
+        epl_set.HomeTeam AS equipo,
+        SUM(0) AS victoria,
+        COUNT(epl_set.FTR) AS empate,
+        SUM(0) AS derrota,
+        epl_set.Season AS temporada
+    FROM
+        epl_set
+    WHERE
+        ((epl_set.Season = '2010-11')
+            AND (epl_set.FTR = 'D'))
+    GROUP BY equipo 
+    UNION ALL SELECT 
+        epl_set.HomeTeam AS equipo,
+        SUM(0) AS victoria,
+        SUM(0) AS empate,
+        COUNT(epl_set.FTR) AS derrota,
+        epl_set.Season AS temporada
+    FROM
+        epl_set
+    WHERE
+        ((epl_set.Season = '2010-11')
+            AND (epl_set.FTR = 'A'))
+    GROUP BY equipo 
+    UNION ALL SELECT 
+        epl_set.AwayTeam AS equipo,
+        COUNT(epl_set.FTR) AS victoria,
+        SUM(0) AS empate,
+        SUM(0) AS derrota,
+        epl_set.Season AS season
+    FROM
+        epl_set
+    WHERE
+        ((epl_set.Season = '2010-11')
+            AND (epl_set.FTR = 'A'))
+    GROUP BY equipo 
+    UNION ALL SELECT 
+        epl_set.AwayTeam AS equipo,
+        SUM(0) AS victoria,
+        COUNT(epl_set.FTR) AS empate,
+        SUM(0) AS derrota,
+        epl_set.Season AS season
+    FROM
+        epl_set
+    WHERE
+        ((epl_set.Season = '2010-11')
+            AND (epl_set.FTR = 'D'))
+    GROUP BY equipo 
+    UNION ALL SELECT 
+        epl_set.AwayTeam AS `equipo`,
+        SUM(0) AS victoria,
+        SUM(0) AS empate,
+        COUNT(epl_set.FTR) AS derrota,
+        epl_set.Season AS season
+    FROM
+        epl_set
+    WHERE
+        ((epl_set.Season = '2010-11')
+            AND (epl_set.FTR = 'H'))
+    GROUP BY equipo;
+    
+   ## INSERCION DE DATOS A LA TABLA TEMPORADA 2010-2011 
+    insert tem_10_11 (equipos,partidos_ganados,partidos_empatados,partidos_perdidos,total_partidos,puntos)
+SELECT 
+    equipo,
+    SUM(victoria) AS victorias,
+    SUM(empate) AS empates,
+    SUM(derrota) AS derrotas,
+    SUM(victoria + empate + derrota) AS partidos,
+    SUM((victoria * 3) + empate) AS puntos
+FROM t10
+GROUP BY equipo
+ORDER BY puntos DESC;
+
+#CREACION DE LA TABLA GOLES DE LA TEMPORADA 2010-2011
+
+CREATE TABLE goles_10_11 (
+    numero INT PRIMARY KEY AUTO_INCREMENT,
+    equipos VARCHAR(30),
+    gol_favor_local INT,
+    gol_contra_local INT,
+    gol_favor_visitante INT,
+    gol_contra_visitante INT,
+    FOREIGN KEY (equipos)
+        REFERENCES total_equipos (equipos)
+);
+
+
+#CREACION DE LA VISTA DE GOLES EN LA TEMPORADA 2010-2011
+
+CREATE VIEW goles10 AS
+    SELECT 
+        epl_set.HomeTeam AS equipo,
+        SUM(epl_set.FTHG) AS gol_favor_local,
+        SUM(epl_set.FTAG) AS gol_contra_local,
+        SUM(0) AS gol_favor_visitante,
+        SUM(0) AS gol_contra_visitante
+    FROM
+        epl_set
+    WHERE
+        (epl_set.Season = 2000-01)
+    GROUP BY equipo 
+    UNION ALL SELECT 
+        epl_set.AwayTeam AS equipo,
+        SUM(0) AS gol_favor_local,
+        SUM(0) AS gol_contra_local,
+        SUM(epl_set.FTAG) AS gol_favor_visitante,
+        SUM(epl_set.FTHG) AS gol_contra_visitante
+    FROM
+        epl_set
+    WHERE
+        (epl_set.Season = '2000-01')
+    GROUP BY equipo;
+ 
+ #INSERCION DE DATOS DE LA TABLA DE GOLES DE LA TEMPORADA 2010-2011
+ 
+ SELECT INTO goles_10_11 (equipos,gol_favor_local,gol_contra_local,gol_favor_visitante,gol_contra_visitante)
+SELECT
+	equipo,
+    sum(gol_favor_local)as gfl,
+    sum(gol_contra_local) as gcl,
+    sum(gol_favor_visitante) as gfv,
+    sum(gol_contra_visitante) as gcv
+FROM
+	goles10
+GROUP BY equipo;
